@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
+using System.Diagnostics;
 
 namespace ConsoleApp1
 {
@@ -293,16 +293,16 @@ namespace ConsoleApp1
 
             Console.WriteLine(new Sudoku(solved, new Random()).Evaluate());
 
-
             int tests = 100;
             int average = 0;
+            int iLimit = 100;
 
+            Random random = new Random();
+
+            var timer = new Stopwatch();
+
+            timer.Start();
             for (int i = 0; i < tests; i++) {
-                // a seed so we can easily rerun stuff later
-                int seed = new Random().Next();
-                //Console.WriteLine(seed);
-
-                Random random = new Random(seed);
                 Sudoku s1 = new Sudoku(grid1, random);
 
                 int totalIterations = 0;
@@ -312,10 +312,9 @@ namespace ConsoleApp1
 
                 while (s1.Evaluate() > 0)
                 {
-                    int iLimit = 100;
                     int iCurrIteration = 0;
 
-                    s1.RandomWalk(random, 1);
+                    s1.RandomWalk(random, 6);
 
                     while (s1.HillClimb(random))
                     {
@@ -332,16 +331,33 @@ namespace ConsoleApp1
                 Console.Write("Total interations: ");
                 Console.WriteLine(totalIterations);
                 average += totalIterations;
+
             }
+            timer.Stop();
 
             average /= tests;
-            Console.Write("Average: ");
+            long time = timer.ElapsedMilliseconds;
+            time /= tests;
+            Console.Write("Average iterations: ");
             Console.WriteLine(average);
+            Console.Write("Average steps: ");
+            Console.WriteLine(average * iLimit);
+            Console.Write("Average time (ms): ");
+            Console.WriteLine(time);
         }
     }
 }
 
 // N = 100
 // 20, 2 -- 182
+// 100, 1 -- 182  18,200 <- swaps
 // 100, 2 -- 82
 // 100, 3 -- 58
+// 100, 4 -- 48
+// 100, 5 -- 44
+
+// 100, 6 -- 42
+// 100, 6 -- 37
+
+// 150, 6 -- 32
+// 100, 7 -- 46
