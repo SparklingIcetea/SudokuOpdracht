@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace ConsoleApp1
 {
@@ -179,7 +180,8 @@ namespace ConsoleApp1
             // 2. Probeer alle mogelijke swaps - binnen het blok - van 2 niet-gefixeerde cijfers
             int bestA = 0;
             int bestB = 0;
-            int score = Evaluate();
+            int startScore = Evaluate();
+            int score = startScore;
 
             foreach ((int a, int b) in blocks[block].SwappablePairs()) {
                 // bekijk successor
@@ -199,11 +201,11 @@ namespace ConsoleApp1
             // 3. Kies hieruit de beste indien die een verbetering of gelijke score oplevert
             if (bestA == bestB) {
                 // geen verbetering gevonden
-                return true;
+                return false;
             } else {
                 // kies successor
                 blocks[block].SwapCells(bestA, bestB);
-                return score > 0;
+                return score < startScore;
             }
         }
 
@@ -291,73 +293,74 @@ namespace ConsoleApp1
             
             string solved = "4 5 3 8 2 6 1 9 7 8 9 2 5 7 1 6 3 4 1 6 7 4 9 3 5 2 8 7 1 4 9 5 2 8 6 3 5 8 6 1 3 7 2 4 9 3 2 9 6 8 4 7 5 1 9 3 5 2 1 8 4 7 6 6 7 1 3 4 5 9 8 2 2 4 8 7 6 9 3 1 5";
 
-            Console.WriteLine(new Sudoku(solved, new Random()).Evaluate());
-
-            int tests = 100;
-            int average = 0;
-            int iLimit = 100;
-
+            int tests = 1000;
+            int iLimit = 20;
             Random random = new Random();
+            string toSolve = grid5;
 
-            var timer = new Stopwatch();
+            for (int S = 15; S < 30; S++) {
+                int[] results = new int[tests];
 
-            timer.Start();
-            for (int i = 0; i < tests; i++) {
-                Sudoku s1 = new Sudoku(grid1, random);
+                int average = 0;
+                var timer = new Stopwatch();
 
-                int totalIterations = 0;
+                timer.Start();
+                for (int i = 0; i < tests; i++) {
+                    Sudoku s1 = new Sudoku(toSolve, random);
 
-                s1.Echo();
-                Console.WriteLine(s1.Evaluate());
-
-                while (s1.Evaluate() > 0)
-                {
-                    int iCurrIteration = 0;
-
-                    s1.RandomWalk(random, 6);
-
-                    while (s1.HillClimb(random))
+                    while (s1.Evaluate() > 0)
                     {
-                        iCurrIteration++;
-                        if (iCurrIteration >= iLimit) break;
+                        int iCurrIteration = 0;
+
+                        s1.RandomWalk(random, S);
+
+                        while (iCurrIteration < iLimit) {
+                            results[i]++;
+                            if (!s1.HillClimb(random)) {
+                                iCurrIteration += 1;
+                            } else {
+                                if (s1.Evaluate() == 0) break;
+                                iCurrIteration = 0;
+                            }
+                        }
                     }
 
-                    totalIterations++;
+                    average += results[i];
                 }
+                timer.Stop();
 
-                s1.Echo();
-                Console.WriteLine(s1.Evaluate());
+                average /= tests;
+                long variance = 0;
+                foreach (int total in results) {
+                    int deviation = average - total;
+                    variance += deviation * deviation;
+                }
+                double v = Math.Sqrt((double) variance / (tests - 1));
 
-                Console.Write("Total interations: ");
-                Console.WriteLine(totalIterations);
-                average += totalIterations;
+                long time = timer.ElapsedMilliseconds;
+                time /= tests;
 
+                Console.Write("S = ");
+                Console.WriteLine(S);
+                Console.Write("Min #steps: ");
+                Console.WriteLine(results.Min());
+                Console.Write("Max #steps: ");
+                Console.WriteLine(results.Max());
+                Console.Write("Mean #steps: ");
+                Console.WriteLine(average);
+                Console.Write("Variance #steps: ");
+                Console.WriteLine(v);
+                Console.Write("Average time (ms): ");
+                Console.WriteLine(time);
+                Console.WriteLine();
             }
-            timer.Stop();
-
-            average /= tests;
-            long time = timer.ElapsedMilliseconds;
-            time /= tests;
-            Console.Write("Average iterations: ");
-            Console.WriteLine(average);
-            Console.Write("Average steps: ");
-            Console.WriteLine(average * iLimit);
-            Console.Write("Average time (ms): ");
-            Console.WriteLine(time);
         }
     }
 }
 
-// N = 100
-// 20, 2 -- 182
-// 100, 1 -- 182  18,200 <- swaps
-// 100, 2 -- 82
-// 100, 3 -- 58
-// 100, 4 -- 48
-// 100, 5 -- 44
-
-// 100, 6 -- 42
-// 100, 6 -- 37
-
-// 150, 6 -- 32
-// 100, 7 -- 46
+// S = 1,  grid4: 12188 steps, 649 ms
+// S = 2,  grid4:  9579 steps, 526 ms
+// S = 3,  grid4:  8518 steps, 458 ms
+// S = 4,  grid4:  
+// S = 6,  grid4:  9185 steps, 496 ms
+// S = 10, grid4:  9876 steps, 543 ms
