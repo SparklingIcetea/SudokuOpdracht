@@ -134,43 +134,40 @@ namespace ConsoleApp1
             }
         }
 
-        public void RandomWalk(int iterations = 1)
+        public void RandomWalk(Random random, int iterations = 1)
         {
-            // Create random instance
-            Random random = new Random();
-
             // Repeat the swap for the given number of iterations
             for (int i = iterations; i > 0; i--)
             {
                 // Choose a random value between 1 and 9 which will be the index of the randomly selected block
-                int iBlockChosen = random.Next(0, 8);
+                int iBlockChosen = random.Next(0, 9);
 
                 // Get the block object
                 Block block = this.blocks[iBlockChosen];
 
                 // Create list which will contain the cells to shuffle
-                List<Cell> cellsToShuffle = new List<Cell>();
+                List<int> cellsToShuffle = new List<int>();
 
                 // Iterate over every cell in the block
-                foreach (Cell cell in block.cells)
+                for (int j = 0; j < 9; j++)
                 {
                     // Check if cell is fixed or not
-                    if (!cell.isFixed)
+                    if (!block.cells[j].isFixed)
                         // Cell is not fixed, add to the list
-                        cellsToShuffle.Add(cell);
+                        cellsToShuffle.Add(j);
                 }
 
                 // Get random integer between 1 and the number of elements to be shuffled
-                int iRandom1 = random.Next(1, cellsToShuffle.Count);
-                int iRandom2 = random.Next(1, cellsToShuffle.Count);
+                int iRandom1 = random.Next(0, cellsToShuffle.Count);
+                int iRandom2 = random.Next(0, cellsToShuffle.Count);
 
                 while (iRandom2 == iRandom1)
                 {
-                    iRandom2 = random.Next(1, cellsToShuffle.Count);
+                    iRandom2 = random.Next(0, cellsToShuffle.Count);
                 }
 
                 // Swap
-                block.SwapCells(iRandom1, iRandom2);
+                block.SwapCells(cellsToShuffle[iRandom1], cellsToShuffle[iRandom2]);
             }
         }
 
@@ -202,7 +199,7 @@ namespace ConsoleApp1
             // 3. Kies hieruit de beste indien die een verbetering of gelijke score oplevert
             if (bestA == bestB) {
                 // geen verbetering gevonden
-                return false;
+                return true;
             } else {
                 // kies successor
                 blocks[block].SwapCells(bestA, bestB);
@@ -291,32 +288,60 @@ namespace ConsoleApp1
             grid3 = "0 0 0 0 0 0 9 0 7 0 0 0 4 2 0 1 8 0 0 0 0 7 0 5 0 2 6 1 0 0 9 0 4 0 0 0 0 5 0 0 0 0 0 4 0 0 0 0 5 0 7 0 0 9 9 2 0 1 0 8 0 0 0 0 3 4 0 5 9 0 0 0 5 0 7 0 0 0 0 0 0";
             grid4 = "0 3 0 0 5 0 0 4 0 0 0 8 0 1 0 5 0 0 4 6 0 0 0 0 0 1 2 0 7 0 5 0 2 0 8 0 0 0 0 6 0 3 0 0 0 0 4 0 1 0 9 0 3 0 2 5 0 0 0 0 0 9 8 0 0 1 0 2 0 6 0 0 0 8 0 0 6 0 0 2 0";
             grid5 = "0 2 0 8 1 0 7 4 0 7 0 0 0 0 3 1 0 0 0 9 0 0 0 2 8 0 5 0 0 9 0 4 0 0 8 7 4 0 0 2 0 8 0 0 3 1 6 0 0 3 0 2 0 0 3 0 2 7 0 0 0 6 0 0 0 5 6 0 0 0 0 8 0 7 6 0 5 1 0 9 0";
+            
+            string solved = "4 5 3 8 2 6 1 9 7 8 9 2 5 7 1 6 3 4 1 6 7 4 9 3 5 2 8 7 1 4 9 5 2 8 6 3 5 8 6 1 3 7 2 4 9 3 2 9 6 8 4 7 5 1 9 3 5 2 1 8 4 7 6 6 7 1 3 4 5 9 8 2 2 4 8 7 6 9 3 1 5";
 
-            // a seed so we can easily rerun stuff later
-            int seed = new Random().Next();
-            //Console.WriteLine(seed);
+            Console.WriteLine(new Sudoku(solved, new Random()).Evaluate());
 
-            Random random = new Random(seed);
-            Sudoku s1 = new Sudoku(grid1, random);
 
-            s1.Echo();
-            Console.WriteLine(s1.Evaluate());
+            int tests = 100;
+            int average = 0;
 
-            int iLimit = 10;
-            int iCurrIteration = 0;
-            while (s1.Evaluate() > 0)
-            {
-                iCurrIteration++;
+            for (int i = 0; i < tests; i++) {
+                // a seed so we can easily rerun stuff later
+                int seed = new Random().Next();
+                //Console.WriteLine(seed);
 
-                if(iCurrIteration >= iLimit)
-                    s1.RandomWalk(2);
+                Random random = new Random(seed);
+                Sudoku s1 = new Sudoku(grid1, random);
 
-                while (s1.HillClimb(random))
+                int totalIterations = 0;
+
+                s1.Echo();
+                Console.WriteLine(s1.Evaluate());
+
+                while (s1.Evaluate() > 0)
                 {
-                    s1.Echo();
-                    Console.WriteLine(s1.Evaluate());
+                    int iLimit = 100;
+                    int iCurrIteration = 0;
+
+                    s1.RandomWalk(random, 1);
+
+                    while (s1.HillClimb(random))
+                    {
+                        iCurrIteration++;
+                        if (iCurrIteration >= iLimit) break;
+                    }
+
+                    totalIterations++;
                 }
+
+                s1.Echo();
+                Console.WriteLine(s1.Evaluate());
+
+                Console.Write("Total interations: ");
+                Console.WriteLine(totalIterations);
+                average += totalIterations;
             }
+
+            average /= tests;
+            Console.Write("Average: ");
+            Console.WriteLine(average);
         }
     }
 }
+
+// N = 100
+// 20, 2 -- 182
+// 100, 2 -- 82
+// 100, 3 -- 58
