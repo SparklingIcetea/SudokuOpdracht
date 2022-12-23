@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace ConsoleApp1
 {
@@ -70,22 +68,6 @@ namespace ConsoleApp1
                     yield return (a, b);
                 }
             }
-        }
-
-        /**
-         *  Prints the values of all cells in this block. *** This ugly function is for testing only, remove before submitting. ***
-         */
-        public void printCells()
-        {
-
-            string row1 = $"{cells[0].data} {cells[1].data} {cells[2].data}";
-            string row2 = $"{cells[3].data} {cells[4].data} {cells[5].data}";
-            string row3 = $"{cells[6].data} {cells[7].data} {cells[8].data}";
-
-            Console.WriteLine(row1);
-            Console.WriteLine(row2);
-            Console.WriteLine(row3);
-            Console.WriteLine(Environment.NewLine);
         }
 
     }
@@ -283,84 +265,39 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            string grid1, grid2, grid3, grid4, grid5;
+            // string grid1, grid2, grid3, grid4, grid5;
+            // grid1 = "0 0 3 0 2 0 6 0 0 9 0 0 3 0 5 0 0 1 0 0 1 8 0 6 4 0 0 0 0 8 1 0 2 9 0 0 7 0 0 0 0 0 0 0 8 0 0 6 7 0 8 2 0 0 0 0 2 6 0 9 5 0 0 8 0 0 2 0 3 0 0 9 0 0 5 0 1 0 3 0 0";
+            // grid2 = "2 0 0 0 8 0 3 0 0 0 6 0 0 7 0 0 8 4 0 3 0 5 0 0 2 0 9 0 0 0 1 0 5 4 0 8 0 0 0 0 0 0 0 0 0 4 0 2 7 0 6 0 0 0 3 0 1 0 0 7 0 4 0 7 2 0 0 4 0 0 6 0 0 0 4 0 1 0 0 0 3";
+            // grid3 = "0 0 0 0 0 0 9 0 7 0 0 0 4 2 0 1 8 0 0 0 0 7 0 5 0 2 6 1 0 0 9 0 4 0 0 0 0 5 0 0 0 0 0 4 0 0 0 0 5 0 7 0 0 9 9 2 0 1 0 8 0 0 0 0 3 4 0 5 9 0 0 0 5 0 7 0 0 0 0 0 0";
+            // grid4 = "0 3 0 0 5 0 0 4 0 0 0 8 0 1 0 5 0 0 4 6 0 0 0 0 0 1 2 0 7 0 5 0 2 0 8 0 0 0 0 6 0 3 0 0 0 0 4 0 1 0 9 0 3 0 2 5 0 0 0 0 0 9 8 0 0 1 0 2 0 6 0 0 0 8 0 0 6 0 0 2 0";
+            // grid5 = "0 2 0 8 1 0 7 4 0 7 0 0 0 0 3 1 0 0 0 9 0 0 0 2 8 0 5 0 0 9 0 4 0 0 8 7 4 0 0 2 0 8 0 0 3 1 6 0 0 3 0 2 0 0 3 0 2 7 0 0 0 6 0 0 0 5 6 0 0 0 0 8 0 7 6 0 5 1 0 9 0";
+            // string solved = "4 5 3 8 2 6 1 9 7 8 9 2 5 7 1 6 3 4 1 6 7 4 9 3 5 2 8 7 1 4 9 5 2 8 6 3 5 8 6 1 3 7 2 4 9 3 2 9 6 8 4 7 5 1 9 3 5 2 1 8 4 7 6 6 7 1 3 4 5 9 8 2 2 4 8 7 6 9 3 1 5";
 
-            grid1 = "0 0 3 0 2 0 6 0 0 9 0 0 3 0 5 0 0 1 0 0 1 8 0 6 4 0 0 0 0 8 1 0 2 9 0 0 7 0 0 0 0 0 0 0 8 0 0 6 7 0 8 2 0 0 0 0 2 6 0 9 5 0 0 8 0 0 2 0 3 0 0 9 0 0 5 0 1 0 3 0 0";
-            grid2 = "2 0 0 0 8 0 3 0 0 0 6 0 0 7 0 0 8 4 0 3 0 5 0 0 2 0 9 0 0 0 1 0 5 4 0 8 0 0 0 0 0 0 0 0 0 4 0 2 7 0 6 0 0 0 3 0 1 0 0 7 0 4 0 7 2 0 0 4 0 0 6 0 0 0 4 0 1 0 0 0 3";
-            grid3 = "0 0 0 0 0 0 9 0 7 0 0 0 4 2 0 1 8 0 0 0 0 7 0 5 0 2 6 1 0 0 9 0 4 0 0 0 0 5 0 0 0 0 0 4 0 0 0 0 5 0 7 0 0 9 9 2 0 1 0 8 0 0 0 0 3 4 0 5 9 0 0 0 5 0 7 0 0 0 0 0 0";
-            grid4 = "0 3 0 0 5 0 0 4 0 0 0 8 0 1 0 5 0 0 4 6 0 0 0 0 0 1 2 0 7 0 5 0 2 0 8 0 0 0 0 6 0 3 0 0 0 0 4 0 1 0 9 0 3 0 2 5 0 0 0 0 0 9 8 0 0 1 0 2 0 6 0 0 0 8 0 0 6 0 0 2 0";
-            grid5 = "0 2 0 8 1 0 7 4 0 7 0 0 0 0 3 1 0 0 0 9 0 0 0 2 8 0 5 0 0 9 0 4 0 0 8 7 4 0 0 2 0 8 0 0 3 1 6 0 0 3 0 2 0 0 3 0 2 7 0 0 0 6 0 0 0 5 6 0 0 0 0 8 0 7 6 0 5 1 0 9 0";
-            
-            string solved = "4 5 3 8 2 6 1 9 7 8 9 2 5 7 1 6 3 4 1 6 7 4 9 3 5 2 8 7 1 4 9 5 2 8 6 3 5 8 6 1 3 7 2 4 9 3 2 9 6 8 4 7 5 1 9 3 5 2 1 8 4 7 6 6 7 1 3 4 5 9 8 2 2 4 8 7 6 9 3 1 5";
+            Console.Write("give me a sudoku: ");
+            string toSolve = Console.ReadLine();
 
-            int tests = 1000;
+            int S = 10;
             int iLimit = 20;
             Random random = new Random();
-            string toSolve = grid5;
+            Sudoku s1 = new Sudoku(toSolve, random);
 
-            for (int S = 15; S < 30; S++) {
-                int[] results = new int[tests];
+            while (s1.Evaluate() > 0)
+            {
+                int iCurrIteration = 0;
 
-                int average = 0;
-                var timer = new Stopwatch();
+                s1.RandomWalk(random, S);
 
-                timer.Start();
-                for (int i = 0; i < tests; i++) {
-                    Sudoku s1 = new Sudoku(toSolve, random);
-
-                    while (s1.Evaluate() > 0)
-                    {
-                        int iCurrIteration = 0;
-
-                        s1.RandomWalk(random, S);
-
-                        while (iCurrIteration < iLimit) {
-                            results[i]++;
-                            if (!s1.HillClimb(random)) {
-                                iCurrIteration += 1;
-                            } else {
-                                if (s1.Evaluate() == 0) break;
-                                iCurrIteration = 0;
-                            }
-                        }
+                while (iCurrIteration < iLimit) {
+                    if (!s1.HillClimb(random)) {
+                        iCurrIteration += 1;
+                    } else {
+                        if (s1.Evaluate() == 0) break;
+                        iCurrIteration = 0;
                     }
-
-                    average += results[i];
                 }
-                timer.Stop();
-
-                average /= tests;
-                long variance = 0;
-                foreach (int total in results) {
-                    int deviation = average - total;
-                    variance += deviation * deviation;
-                }
-                double v = Math.Sqrt((double) variance / (tests - 1));
-
-                long time = timer.ElapsedMilliseconds;
-                time /= tests;
-
-                Console.Write("S = ");
-                Console.WriteLine(S);
-                Console.Write("Min #steps: ");
-                Console.WriteLine(results.Min());
-                Console.Write("Max #steps: ");
-                Console.WriteLine(results.Max());
-                Console.Write("Mean #steps: ");
-                Console.WriteLine(average);
-                Console.Write("Variance #steps: ");
-                Console.WriteLine(v);
-                Console.Write("Average time (ms): ");
-                Console.WriteLine(time);
-                Console.WriteLine();
             }
+
+            s1.Echo();
         }
     }
 }
-
-// S = 1,  grid4: 12188 steps, 649 ms
-// S = 2,  grid4:  9579 steps, 526 ms
-// S = 3,  grid4:  8518 steps, 458 ms
-// S = 4,  grid4:  
-// S = 6,  grid4:  9185 steps, 496 ms
-// S = 10, grid4:  9876 steps, 543 ms
