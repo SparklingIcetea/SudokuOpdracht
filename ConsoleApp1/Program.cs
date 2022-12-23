@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 namespace ConsoleApp1
 {
@@ -15,60 +16,6 @@ namespace ConsoleApp1
         public Block(Cell[] cells)
         {
             this.cells = cells;
-        }
-
-        /*
-            * Swaps the two specified cells
-            */
-        public void Swap(Cell A, Cell B)
-        {
-            Cell backup = A;
-            A = B;
-            B = backup;
-        }
-
-        public void RandomWalk(int iterations = 1)
-        {
-            // Create random instance
-            Random random = new Random();
-
-            // Create list which will contain the cells to shuffle
-            List<Cell> cellsToShuffle = new List<Cell>();
-
-            // Iterate over every cell in the block
-            foreach (Cell cell in cells)
-            {
-                // Check if cell is fixed or not
-                if (!cell.isFixed)
-                    // Cell is not fixed, add to the list
-                    cellsToShuffle.Add(cell);
-            }
-
-            // Get random integer between 1 and the number of elements to be shuffled
-            int iRandom = random.Next(1, cellsToShuffle.Count);
-
-            // Get the first randomly selected cell
-            Cell cell1 = cellsToShuffle[iRandom];
-
-            // Get new random integer
-            iRandom = random.Next(1, cellsToShuffle.Count);
-
-            // Get the second randomly selected cell
-            Cell cell2 = cellsToShuffle[iRandom];
-
-            // Remove the selected cells to prevent swapping the cell with itself
-            cellsToShuffle.Remove(cell1);
-            cellsToShuffle.Remove(cell2);
-
-            // Repeat the swap for the given number of iterations
-            for (int i = iterations; i > 0; i--)
-            {
-                // Do the first swap
-                this.Swap(cell1, cells[random.Next(1, cellsToShuffle.Count)]);
-
-                // Do the second swap
-                this.Swap(cell2, cells[random.Next(1, cellsToShuffle.Count)]);
-            }
         }
 
         public void FillRandom(Random random)
@@ -124,6 +71,22 @@ namespace ConsoleApp1
             }
         }
 
+        /**
+         *  Prints the values of all cells in this block. *** This ugly function is for testing only, remove before submitting. ***
+         */
+        public void printCells()
+        {
+
+            string row1 = $"{cells[0].data} {cells[1].data} {cells[2].data}";
+            string row2 = $"{cells[3].data} {cells[4].data} {cells[5].data}";
+            string row3 = $"{cells[6].data} {cells[7].data} {cells[8].data}";
+
+            Console.WriteLine(row1);
+            Console.WriteLine(row2);
+            Console.WriteLine(row3);
+            Console.WriteLine(Environment.NewLine);
+        }
+
     }
 
     public struct Sudoku
@@ -171,6 +134,46 @@ namespace ConsoleApp1
             }
         }
 
+        public void RandomWalk(int iterations = 1)
+        {
+            // Create random instance
+            Random random = new Random();
+
+            // Repeat the swap for the given number of iterations
+            for (int i = iterations; i > 0; i--)
+            {
+                // Choose a random value between 1 and 9 which will be the index of the randomly selected block
+                int iBlockChosen = random.Next(0, 8);
+
+                // Get the block object
+                Block block = this.blocks[iBlockChosen];
+
+                // Create list which will contain the cells to shuffle
+                List<Cell> cellsToShuffle = new List<Cell>();
+
+                // Iterate over every cell in the block
+                foreach (Cell cell in block.cells)
+                {
+                    // Check if cell is fixed or not
+                    if (!cell.isFixed)
+                        // Cell is not fixed, add to the list
+                        cellsToShuffle.Add(cell);
+                }
+
+                // Get random integer between 1 and the number of elements to be shuffled
+                int iRandom1 = random.Next(1, cellsToShuffle.Count);
+                int iRandom2 = random.Next(1, cellsToShuffle.Count);
+
+                while (iRandom2 == iRandom1)
+                {
+                    iRandom2 = random.Next(1, cellsToShuffle.Count);
+                }
+
+                // Swap
+                block.SwapCells(iRandom1, iRandom2);
+            }
+        }
+
         public bool HillClimb(Random random)
         {
             // 1. Kies willekeurig een van de 9 (3 × 3)-blokken
@@ -203,7 +206,7 @@ namespace ConsoleApp1
             } else {
                 // kies successor
                 blocks[block].SwapCells(bestA, bestB);
-                return true;
+                return score > 0;
             }
         }
 
@@ -291,17 +294,28 @@ namespace ConsoleApp1
 
             // a seed so we can easily rerun stuff later
             int seed = new Random().Next();
-            Console.WriteLine(seed);
+            //Console.WriteLine(seed);
 
             Random random = new Random(seed);
             Sudoku s1 = new Sudoku(grid1, random);
+
             s1.Echo();
             Console.WriteLine(s1.Evaluate());
 
-            while (s1.HillClimb(random))
+            int iLimit = 10;
+            int iCurrIteration = 0;
+            while (s1.Evaluate() > 0)
             {
-                s1.Echo();
-                Console.WriteLine(s1.Evaluate());
+                iCurrIteration++;
+
+                if(iCurrIteration >= iLimit)
+                    s1.RandomWalk(2);
+
+                while (s1.HillClimb(random))
+                {
+                    s1.Echo();
+                    Console.WriteLine(s1.Evaluate());
+                }
             }
         }
     }
