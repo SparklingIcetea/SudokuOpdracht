@@ -154,6 +154,12 @@ namespace ConsoleApp1
             }
         }
 
+        /**
+         * The main hill climb algorithm
+         * This function executes a single step
+         * It finds the best swap possible and executes it if it gives the same score or lower
+         * It returns if the swap resulted in a lower score
+         */
         public bool HillClimb(Random random)
         {
             // 1. Kies willekeurig een van de 9 (3 × 3)-blokken
@@ -273,30 +279,39 @@ namespace ConsoleApp1
             // grid5 = "0 2 0 8 1 0 7 4 0 7 0 0 0 0 3 1 0 0 0 9 0 0 0 2 8 0 5 0 0 9 0 4 0 0 8 7 4 0 0 2 0 8 0 0 3 1 6 0 0 3 0 2 0 0 3 0 2 7 0 0 0 6 0 0 0 5 6 0 0 0 0 8 0 7 6 0 5 1 0 9 0";
             // string solved = "4 5 3 8 2 6 1 9 7 8 9 2 5 7 1 6 3 4 1 6 7 4 9 3 5 2 8 7 1 4 9 5 2 8 6 3 5 8 6 1 3 7 2 4 9 3 2 9 6 8 4 7 5 1 9 3 5 2 1 8 4 7 6 6 7 1 3 4 5 9 8 2 2 4 8 7 6 9 3 1 5";
 
+            // Ask sudoku from user in the same format as the sudokus above
             Console.Write("give me a sudoku: ");
             string toSolve = Console.ReadLine();
 
+            // Constants for random walk count and hill climb fail limit
             int S = 10;
             int iLimit = 20;
+
+            // Parse sudoku
             Random random = new Random();
             Sudoku s1 = new Sudoku(toSolve, random);
 
             while (s1.Evaluate() > 0)
             {
-                int iCurrIteration = 0;
-
                 s1.RandomWalk(random, S);
 
-                while (iCurrIteration < iLimit) {
+                // If the hill climb algorithm fails 20 times in a row, we stop and move on to random walking
+                int failureCount = 0;
+                while (failureCount < iLimit) {
                     if (!s1.HillClimb(random)) {
-                        iCurrIteration += 1;
+                        // We are at a plateau or local minimum, add one to the failure
+                        failureCount += 1;
                     } else {
+                        // We are done when the score reaches zero
                         if (s1.Evaluate() == 0) break;
-                        iCurrIteration = 0;
+
+                        // We are moving downward again, reset the failure count
+                        failureCount = 0;
                     }
                 }
             }
 
+            // Print the solved sudoku to the user
             s1.Echo();
         }
     }
