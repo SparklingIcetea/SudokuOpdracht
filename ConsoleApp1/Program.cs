@@ -23,24 +23,41 @@ namespace ConsoleApp1
             }
             return value.ToString();
         }
-    }
 
-    public struct Block
-    {
-        public Cell[] cells;
-        public Block(Cell[] cells)
-        {
-            this.cells = cells;
+        /**
+        * Returns a number if this cell has one possible state
+        * Otherwise returns null
+        */
+        public int? GetValue() {
+            int? value = null;
+            for (int i = 0; i < 9; i++) {
+                if (possibleValues[i]) {
+                    if (value != null) {
+                        return null;
+                    } else {
+                        value = i + 1;
+                    }
+                }
+            }
+            return value;
+        }
+
+        public bool contains(int v) {
+            return possibleValues[v - 1];
+        }
+
+        public void reduce(int v) {
+            possibleValues[v - 1] = false;
         }
     }
 
     public struct Sudoku
     {
-        public Block[] blocks;
+        public Cell[,] cells;
         public Sudoku(string grid)
         {
             // create 2d cell array with x and y being columns and rows
-            Cell[,] cells = new Cell[9, 9];
+            cells = new Cell[9, 9];
             string[] numbers = grid.Split();
 
             for (int i = 0; i < numbers.Length; i++)
@@ -60,41 +77,85 @@ namespace ConsoleApp1
                     cells[column, row].possibleValues[int.Parse(numbers[i]) - 1] = true;
                 }
             }
+        }
 
-            // put cells in blocks, where each block is a 3x3 region of the sudoku
-            this.blocks = new Block[9];
-            for (int i = 0; i < 9; i++)
-            {
-                this.blocks[i] = new Block(new Cell[9]);
+        public static bool IsNeighbors(int x1, int y1, int x2, int y2) {
+            if (x1 == x2 && y1 == y2) {
+                // same cell
+                return false;
+            }
+        
+            if (x1 == x2 || y1 == y2) {
+                // same column or row
+                return true;
             }
 
-            for (int x = 0; x < 9; x++)
-            {
-                for (int y = 0; y < 9; y++)
-                {
-                    SetCell(x, y, cells[x, y]);
+            int bx1 = x1 / 3;
+            int by1 = y1 / 3;
+            int bx2 = x2 / 3;
+            int by2 = y2 / 3;
+            if (bx1 == bx2 && by1 == by2) {
+                // same block
+                return true;
+            }
+
+            // independent
+            return false;
+        }
+
+        /**
+        * Returns if (v1, v2) is a member of the constraints C((x1, y2), (x2, y2))
+        */
+        public bool SatisfiesConstraints(int x1, int y1, int v1, int x2, int y2, int v2) {
+            // first check if the values are part of the cells' domains
+            if (!cells[x1, y1].contains(v1)) return false;
+            if (!cells[x2, y2].contains(v2)) return false;
+        
+            if (x1 == x2 && y1 == y2) {
+                // C(i, i) constraint is being checked
+                if (v1 != v2) return false; // a cell can not have two values at once
+
+                // check our cell with each other fixed cell
+                for (int x = 0; x < 9; x++) {
+                    for (int y = 0; y < 9; y++) {
+                        if (x == x1 && y == y2) continue;
+
+                        int? value = cells[x, y].GetValue();
+                        if (value == null) continue;
+
+                        // the cell is fixed, so let's check if our cell can have value `v1` if the iterated cell has `value`
+                        if (!SatisfiesConstraints(x1, y2, v1, x, y, value.Value)) {
+                            return false;
+                        }
+                    }
+                }
+
+                // none of the fixed cells complained, so this cell having value `v1` is valid!
+                return true;
+            }
+        
+            if (!IsNeighbors(x1, y1, x2, y2)) {
+                // the two cells are not in the same column, row or block
+                // this means that they are independent and can have any value in relation to each other
+                return true;
+            }
+
+            // the two cells are neighbors
+            // this means they cannot have the same value
+            return v1 != v2;
+        }
+
+        public void MakeNodeConsistent() {
+            for (int x = 0; x < 9; x++) {
+                for (int y = 0; y < 9; y++) {
+                    for (int v = 1; v <= 9; v++) {
+                        if (!cells[x, y].contains(v)) continue;
+
+                        // if a domain value does not satisfy the constrains, remove it
+                        if (!SatisfiesConstraints(x, y, v, x, y, v)) cells[x, y].reduce(v);
+                    }
                 }
             }
-        }
-
-        /**
-        * Get the cell at a specified column and row
-        */
-        public Cell GetCell(int x, int y)
-        {
-            int block = (y / 3) * 3 + (x / 3);
-            int inside = (y % 3) * 3 + (x % 3);
-            return this.blocks[block].cells[inside];
-        }
-
-        /**
-         * Modifies the cell at a specified column and row
-         */
-        public void SetCell(int x, int y, Cell cell)
-        {
-            int block = (y / 3) * 3 + (x / 3);
-            int inside = (y % 3) * 3 + (x % 3);
-            this.blocks[block].cells[inside] = cell;
         }
 
         /**
@@ -112,7 +173,7 @@ namespace ConsoleApp1
 
                 int x = i % 9;
                 int y = i / 9;
-                Console.Write(GetCell(x, y).ToString());
+                Console.Write(cells[x, y].ToString());
             }
             Console.WriteLine();
         }
@@ -136,6 +197,10 @@ namespace ConsoleApp1
 
             // Parse sudoku
             Sudoku s1 = new Sudoku(toSolve);
+            s1.Echo();
+
+            Console.WriteLine("MakeNodeConsistent");
+            s1.MakeNodeConsistent();
             s1.Echo();
         }
     }
