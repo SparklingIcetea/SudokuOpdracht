@@ -54,3 +54,6 @@ dkms.conf
 ConsoleApp1/bin/
 ConsoleApp1/obj/
 ConsoleApp1/.vs/
+
+.envrc
+.direnv

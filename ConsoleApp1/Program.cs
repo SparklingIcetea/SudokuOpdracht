@@ -1,12 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 
 namespace ConsoleApp1
 {
     public struct Cell
     {
-        public bool isFixed;
-        public int data;
+        // an array of 9 booleans that specify if the number is still possible
+        public bool[] possibleValues;
+
+        public override string ToString() {
+            int? value = null;
+            for (int i = 0; i < 9; i++) {
+                if (possibleValues[i]) {
+                    if (value != null) {
+                        return " ";
+                    } else {
+                        value = i + 1;
+                    }
+                }
+            }
+            if (value == null) {
+                return "x";
+            }
+            return value.ToString();
+        }
     }
 
     public struct Block
@@ -16,66 +32,12 @@ namespace ConsoleApp1
         {
             this.cells = cells;
         }
-
-        public void FillRandom(Random random)
-        {
-            // for each block, put the numbers 1-9 inside randomly
-            // we start with a list of all 9 unused numbers
-            List<int> unused = new List<int>(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
-
-            // remove the numbers already used by fixed cells
-            for (int inside = 0; inside < 9; inside++)
-            {
-                if (cells[inside].isFixed)
-                {
-                    unused.Remove(cells[inside].data);
-                }
-            }
-
-            // populate block array
-            for (int inside = 0; inside < 9; inside++)
-            {
-                if (!cells[inside].isFixed)
-                {
-                    // put in a random unused number
-                    int next = random.Next(unused.Count);
-                    cells[inside].data = unused[next];
-                    unused.RemoveAt(next);
-                }
-            }
-        }
-
-        /**
-         *  Swaps the two cells at indices a and b
-         */
-        public void SwapCells(int a, int b) {
-            Cell tmp = cells[a];
-            cells[a] = cells[b];
-            cells[b] = tmp;
-        }
-
-        /**
-         *  Returns all pairs of non-fixed cells
-         */
-        public IEnumerable<(int, int)> SwappablePairs()
-        {
-            for (int a = 0; a < 9; a++)
-            {
-                if (cells[a].isFixed) continue;
-                for (int b = a + 1; b < 9; b++)
-                {
-                    if (cells[b].isFixed) continue;
-                    yield return (a, b);
-                }
-            }
-        }
-
     }
 
     public struct Sudoku
     {
         public Block[] blocks;
-        public Sudoku(string grid, Random random)
+        public Sudoku(string grid)
         {
             // create 2d cell array with x and y being columns and rows
             Cell[,] cells = new Cell[9, 9];
@@ -87,9 +49,16 @@ namespace ConsoleApp1
                 int column = i % 9;
                 int row = i / 9;
 
-                // if the number is nonzero, its value is fixed and should never be swapped later on
-                cells[column, row].isFixed = (numbers[i] != "0");
-                cells[column, row].data = int.Parse(numbers[i]);
+                cells[column, row].possibleValues = new bool[9];
+                if (numbers[i] == "0") {
+                    // if the number is zero, it could have any value
+                    for (int j = 0; j < 9; j++) {
+                        cells[column, row].possibleValues[j] = true;
+                    }
+                } else {
+                    // its possible value is only one
+                    cells[column, row].possibleValues[int.Parse(numbers[i]) - 1] = true;
+                }
             }
 
             // put cells in blocks, where each block is a 3x3 region of the sudoku
@@ -103,97 +72,8 @@ namespace ConsoleApp1
             {
                 for (int y = 0; y < 9; y++)
                 {
-                    if (cells[x, y].isFixed)
-                    {
-                        SetCell(x, y, cells[x, y]);
-                    }
+                    SetCell(x, y, cells[x, y]);
                 }
-            }
-
-            // fill the rest of the blocks randomly
-            for (int i = 0; i < 9; i++)
-            {
-                this.blocks[i].FillRandom(random);
-            }
-        }
-
-        public void RandomWalk(Random random, int iterations = 1)
-        {
-            // Repeat the swap for the given number of iterations
-            for (int i = iterations; i > 0; i--)
-            {
-                // Choose a random value between 1 and 9 which will be the index of the randomly selected block
-                int iBlockChosen = random.Next(0, 9);
-
-                // Get the block object
-                Block block = this.blocks[iBlockChosen];
-
-                // Create list which will contain the cells to shuffle
-                List<int> cellsToShuffle = new List<int>();
-
-                // Iterate over every cell in the block
-                for (int j = 0; j < 9; j++)
-                {
-                    // Check if cell is fixed or not
-                    if (!block.cells[j].isFixed)
-                        // Cell is not fixed, add to the list
-                        cellsToShuffle.Add(j);
-                }
-
-                // Get random integer between 1 and the number of elements to be shuffled
-                int iRandom1 = random.Next(0, cellsToShuffle.Count);
-                int iRandom2 = random.Next(0, cellsToShuffle.Count);
-
-                while (iRandom2 == iRandom1)
-                {
-                    iRandom2 = random.Next(0, cellsToShuffle.Count);
-                }
-
-                // Swap
-                block.SwapCells(cellsToShuffle[iRandom1], cellsToShuffle[iRandom2]);
-            }
-        }
-
-        /**
-         * The main hill climb algorithm
-         * This function executes a single step
-         * It finds the best swap possible and executes it if it gives the same score or lower
-         * It returns if the swap resulted in a lower score
-         */
-        public bool HillClimb(Random random)
-        {
-            // 1. Kies willekeurig een van de 9 (3 × 3)-blokken
-            int block = random.Next(9);
-
-            // 2. Probeer alle mogelijke swaps - binnen het blok - van 2 niet-gefixeerde cijfers
-            int bestA = 0;
-            int bestB = 0;
-            int startScore = Evaluate();
-            int score = startScore;
-
-            foreach ((int a, int b) in blocks[block].SwappablePairs()) {
-                // bekijk successor
-                blocks[block].SwapCells(a, b);
-                int newScore = Evaluate();
-
-                // ga terug naar huidige toestand
-                blocks[block].SwapCells(a, b);
-
-                if (newScore <= score) {
-                    bestA = a;
-                    bestB = b;
-                    score = newScore;
-                }
-            }
-
-            // 3. Kies hieruit de beste indien die een verbetering of gelijke score oplevert
-            if (bestA == bestB) {
-                // geen verbetering gevonden
-                return false;
-            } else {
-                // kies successor
-                blocks[block].SwapCells(bestA, bestB);
-                return score < startScore;
             }
         }
 
@@ -224,46 +104,17 @@ namespace ConsoleApp1
         {
             for (int i = 0; i < 81; i++)
             {
-                if (i % 3 == 0) Console.Write(" ");
-                if ((i % 9) == 0) Console.WriteLine();
-                if ((i % (9 * 3)) == 0) Console.WriteLine();
+                if (i > 0) {
+                    if ((i % 9) == 0) Console.WriteLine();
+                    else if (i % 3 == 0) Console.Write("|");
+                    if ((i % (9 * 3)) == 0) Console.WriteLine("---|---|---");
+                }
 
                 int x = i % 9;
                 int y = i / 9;
-                Console.Write(GetCell(x, y).data.ToString());
+                Console.Write(GetCell(x, y).ToString());
             }
             Console.WriteLine();
-        }
-
-        public int Evaluate()
-        {
-            int score = 0;
-            for (int i = 0; i < 9; i++) //Checks score for horizontal rows.
-            {
-                bool[] missing = { true, true, true, true, true, true, true, true, true }; //Create array to keep track of missing numbers
-                for (int j = 0; j < 9; j++)
-                {
-                    missing[GetCell(i, j).data - 1] = false; //Turn index of missing number to false
-                }
-                for (int k = 0; k < 9; k++)
-                {
-                    if (missing[k]) score++; //If there are missing numbers, add them to the score.
-                }
-            }
-
-            for (int j = 0; j < 9; j++) //Checks score for vertical rows.
-            {
-                bool[] missing = { true, true, true, true, true, true, true, true, true };
-                for (int i = 0; i < 9; i++)
-                {
-                    missing[GetCell(i, j).data - 1] = false;
-                }
-                for (int k = 0; k < 9; k++)
-                {
-                    if (missing[k]) score++;
-                }
-            }
-            return score;
         }
     }
 
@@ -283,35 +134,8 @@ namespace ConsoleApp1
             Console.Write("give me a sudoku: ");
             string toSolve = Console.ReadLine();
 
-            // Constants for random walk count and hill climb fail limit
-            int S = 10;
-            int iLimit = 20;
-
             // Parse sudoku
-            Random random = new Random();
-            Sudoku s1 = new Sudoku(toSolve, random);
-
-            while (s1.Evaluate() > 0)
-            {
-                s1.RandomWalk(random, S);
-
-                // If the hill climb algorithm fails 20 times in a row, we stop and move on to random walking
-                int failureCount = 0;
-                while (failureCount < iLimit) {
-                    if (!s1.HillClimb(random)) {
-                        // We are at a plateau or local minimum, add one to the failure
-                        failureCount += 1;
-                    } else {
-                        // We are done when the score reaches zero
-                        if (s1.Evaluate() == 0) break;
-
-                        // We are moving downward again, reset the failure count
-                        failureCount = 0;
-                    }
-                }
-            }
-
-            // Print the solved sudoku to the user
+            Sudoku s1 = new Sudoku(toSolve);
             s1.Echo();
         }
     }
