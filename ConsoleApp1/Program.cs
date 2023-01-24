@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 
 namespace ConsoleApp1
 {
@@ -49,6 +50,15 @@ namespace ConsoleApp1
         public void reduce(int v) {
             possibleValues[v - 1] = false;
         }
+
+        public void assign(int v)
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                if (i != v) possibleValues[i - 1] = false;
+            }
+        }
+
     }
 
     public struct Sudoku
@@ -77,6 +87,7 @@ namespace ConsoleApp1
                     cells[column, row].possibleValues[int.Parse(numbers[i]) - 1] = true;
                 }
             }
+
         }
 
         public static bool IsNeighbors(int x1, int y1, int x2, int y2) {
@@ -156,6 +167,37 @@ namespace ConsoleApp1
                     }
                 }
             }
+        }
+
+        //Chronological Back Tracking
+        public bool CBT(Sudoku sudoku, int x, int y) 
+        {
+            //Stop backtracking after the final cell
+            if (x == 8 && y == 9) return true;
+
+            //When reaching end of the column, go to next row. (out of bounds)
+            if (y == 9)
+            {
+                x++;               //increase row
+                y = 0;             //set column back to 0
+            }
+
+            //Go to the next cell if cell is already filled
+            if (sudoku.cells[x, y].GetValue() != null) return CBT(sudoku, x, y + 1); 
+
+            //Try filling in numbers in ascending order from 1 to 9.
+            for (int i = 1; i <= 9; i++)
+            {
+                if (sudoku.cells[x, y].contains(i))
+                {
+                    //assign cell here...
+
+
+                    if (CBT(sudoku, x, y + 1)) return true; 
+                }
+                //back track here...
+            }
+            return false;
         }
 
         /**
