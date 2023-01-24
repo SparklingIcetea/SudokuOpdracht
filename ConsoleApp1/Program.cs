@@ -3,7 +3,79 @@ using System.Linq.Expressions;
 
 namespace ConsoleApp1
 {
-    public struct Cell
+    class ForwardChecker
+    {
+        /**
+         * Reduces domains of other cells by using forward checking.
+         * Returns true when partial solution is found. Else returns false.
+         */
+        public bool Check(Sudoku sudoku, int iRow, int iColumn)
+        {
+            // Check whether row and column value lay between 1 and 9
+            if ((iRow < 0 || iRow > 8) || (iColumn < 0 || iColumn > 8))
+            {
+                // Throw exception as one of the specified values is invalid
+                throw new Exception("Either column or row value did not respect the limits.");
+            }
+
+            // Get the value of the current cell
+            int iValueCurrentCell = sudoku.cells[iRow, iColumn].GetValue().Value;
+
+            // Iterate over the 9 rows
+            for (int row = 8; row >= 0; row--)
+            {
+                // Iterate over the 9 columns
+                for (int column = 8; column >= 0; column--)
+                {
+                    // Skip the current cell if it is the cell whose domain we are calculating
+                    if (iRow == row && iColumn == column)
+                    {
+                        continue;
+                    }
+
+                    // Check if this cell still has a domain after reduction
+                    bool hasDomain = false;
+
+                    // Check which values comply with the constraint and leave those in our domain
+                    for (int y = 9; y >= 1; y--)
+                    {
+                        // Get bool value which represents whether the current value of (y + 1) is in the domain of the other cell                     
+                        bool bInDomain = sudoku.cells[row, column].contains(y);
+
+                        if(bInDomain)
+                        {
+                            // y is included in the domain of the other cell 
+
+                            // Get the value of the other cell
+                            int iValueOtherCell = y;
+
+                            // Check constraints
+                            bool bResult = sudoku.SatisfiesConstraints(iRow, iColumn, (int)iValueCurrentCell, row, column, (int)iValueOtherCell);
+
+                            if(!bResult)
+                            {
+                                // Function returned false, we have to remove the value from the domain
+                                sudoku.cells[row, column].reduce(y);
+                            }
+                            else
+                            {
+                                // This cell has a domain value left over
+                                hasDomain = true;
+                            }
+                        }
+                    }
+
+                    // If this cell is now empty, this is not a partial solution and we return false
+                    if (!hasDomain) return false;
+                }
+            }
+
+            // If all cells are non-empty, this is a partial solution and we return true
+            return true;
+        }
+    }
+
+        public struct Cell
     {
         // an array of 9 booleans that specify if the number is still possible
         public bool[] possibleValues;
@@ -64,6 +136,12 @@ namespace ConsoleApp1
     public struct Sudoku
     {
         public Cell[,] cells;
+
+        public Sudoku(Cell[,] cells)
+        {
+            this.cells = cells;
+        }
+        
         public Sudoku(string grid)
         {
             // create 2d cell array with x and y being columns and rows
@@ -219,6 +297,21 @@ namespace ConsoleApp1
             }
             Console.WriteLine();
         }
+
+        public Sudoku Clone()
+        {
+            Cell[,] clonedCells = new Cell[9, 9];
+
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    clonedCells[x, y].possibleValues = (bool[]) this.cells[x, y].possibleValues.Clone();
+                }
+            }
+
+            return new Sudoku(clonedCells);
+        }
     }
 
     class Program
@@ -241,9 +334,25 @@ namespace ConsoleApp1
             Sudoku s1 = new Sudoku(toSolve);
             s1.Echo();
 
+            Console.WriteLine();
             Console.WriteLine("MakeNodeConsistent");
             s1.MakeNodeConsistent();
             s1.Echo();
+
+            Console.WriteLine();
+            Console.WriteLine("Put 1 in cell 0, 0");
+            s1.cells[0, 0].possibleValues = new bool[] {true, false, false, false, false, false, false, false, false};
+            s1.Echo();
+
+            Console.WriteLine();
+            Console.WriteLine("ForwardCheck");
+            new ForwardChecker().Check(s1, 0, 0);
+            s1.Echo();
+
+            Console.WriteLine();
+            Console.WriteLine("Clone");
+            Sudoku s2 = s1.Clone();
+            s2.Echo();
         }
     }
 }
