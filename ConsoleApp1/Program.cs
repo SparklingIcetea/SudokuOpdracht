@@ -1,8 +1,80 @@
 using System;
+using System.Linq;
+
 
 namespace ConsoleApp1
 {
-    public struct Cell
+    class ForwardChecker
+    {
+        /**
+         * Reduces domains of other cells by using forward checking.
+         * Returns true when partial solution is found. Else returns false.
+         */
+        public bool Check(Sudoku sudoku, int iRow, int iColumn)
+        {
+
+            // Check whether row and column value lay between 1 and 9
+            if ((iRow < 0 || iRow > 9) || (iColumn < 0 || iColumn > 9))
+            {
+                // Throw exception as one of the specified values is invalid
+                throw new Exception("Either column or row value did not respect the limits.");
+            }
+
+            bool bIsPartialSolution = false;
+
+            // Iterate over the 9 rows
+            for (int row = 9; row > 0; row--)
+            {
+                // Iterate over the 9 columns
+                for (int column = 9; column > 0; column--)
+                {
+                    // Skip the current cell if it is the cell whose domain we are calculating
+                    if (iRow == row && iColumn == column)
+                    {
+                        continue;
+                    }
+
+                    // Check which values comply with the constraint and leave those in our domain
+                    for (int y = 8; y >= 0; y--)
+                    {
+                        // Get bool value which represents whether the current value of (y + 1) is in the domain of the other cell                     
+                        bool bInDomain = sudoku.cells[row, column].possibleValues[y];
+
+                        if(bInDomain)
+                        {
+                            // (y + 1) is included in the domain of the other cell 
+
+                            // We found a value in the domain of the other cell, meaning there is a partial solution
+                            bIsPartialSolution = true;
+
+                            // Get the value of the current cell (nullable)
+                            int? iValueCurrentCell = sudoku.cells[iRow, iColumn].GetValue();
+
+                            // Get the value of the other cell
+                            int iValueOtherCell = y + 1;
+
+                            // Check if value is not null, as this would mean our function fails
+                            if (iValueCurrentCell != null)
+                            {
+                                // Check constraints
+                                bool bResult = sudoku.SatisfiesConstraints(iRow, iColumn, (int)iValueCurrentCell, row, column, (int)iValueOtherCell);
+
+                                // Function returned false, we have to remove the value from the domain
+                                if(!bResult)
+                                {
+                                    sudoku.cells[row, column].reduce(y);
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }                
+            return bIsPartialSolution;
+        }
+    }
+
+        public struct Cell
     {
         // an array of 9 booleans that specify if the number is still possible
         public bool[] possibleValues;
