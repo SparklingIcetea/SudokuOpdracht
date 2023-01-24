@@ -9,7 +9,7 @@ namespace ConsoleApp1
          * Reduces domains of other cells by using forward checking.
          * Returns true when partial solution is found. Else returns false.
          */
-        public bool Check(Sudoku sudoku, int iRow, int iColumn)
+        public static bool Check(Sudoku sudoku, int iRow, int iColumn)
         {
             // Check whether row and column value lay between 1 and 9
             if ((iRow < 0 || iRow > 8) || (iColumn < 0 || iColumn > 8))
@@ -125,7 +125,7 @@ namespace ConsoleApp1
 
         public void assign(int v)
         {
-            for (int i = 0; i < 9; i++)
+            for (int i = 1; i <= 9; i++)
             {
                 if (i != v) possibleValues[i - 1] = false;
             }
@@ -248,10 +248,10 @@ namespace ConsoleApp1
         }
 
         //Chronological Back Tracking
-        public bool CBT(Sudoku sudoku, int x, int y) 
+        public Sudoku? CBT(int x, int y) 
         {
             //Stop backtracking after the final cell
-            if (x == 8 && y == 9) return true;
+            if (x == 8 && y == 9) return this;
 
             //When reaching end of the column, go to next row. (out of bounds)
             if (y == 9)
@@ -261,21 +261,21 @@ namespace ConsoleApp1
             }
 
             //Go to the next cell if cell is already filled
-            if (sudoku.cells[x, y].GetValue() != null) return CBT(sudoku, x, y + 1); 
+            if (this.cells[x, y].GetValue() != null) return this.CBT(x, y + 1); 
 
             //Try filling in numbers in ascending order from 1 to 9.
             for (int i = 1; i <= 9; i++)
             {
-                if (sudoku.cells[x, y].contains(i))
+                if (this.cells[x, y].contains(i)) //Check if i is in domain of the cell.
                 {
-                    //assign cell here...
-
-
-                    if (CBT(sudoku, x, y + 1)) return true; 
+                    Sudoku newSudoku = this.Clone();
+                    newSudoku.cells[x, y].assign(i); //Assign value to the cell.
+                    if (!ForwardChecker.Check(newSudoku, x, y)) continue; //ForwardChecking
+                    Sudoku? solvedSudoku = newSudoku.CBT(x, y + 1); //CBT next cell. 
+                    if (solvedSudoku != null) return solvedSudoku; //Return solved sudoku
                 }
-                //back track here...
             }
-            return false;
+            return null;
         }
 
         /**
@@ -339,20 +339,9 @@ namespace ConsoleApp1
             s1.MakeNodeConsistent();
             s1.Echo();
 
-            Console.WriteLine();
-            Console.WriteLine("Put 1 in cell 0, 0");
-            s1.cells[0, 0].possibleValues = new bool[] {true, false, false, false, false, false, false, false, false};
-            s1.Echo();
-
-            Console.WriteLine();
-            Console.WriteLine("ForwardCheck");
-            new ForwardChecker().Check(s1, 0, 0);
-            s1.Echo();
-
-            Console.WriteLine();
-            Console.WriteLine("Clone");
-            Sudoku s2 = s1.Clone();
-            s2.Echo();
+            Sudoku? solved = s1.CBT(0, 0);
+            if (solved != null) solved.Value.Echo();
+            else Console.WriteLine("failed");
         }
     }
 }
