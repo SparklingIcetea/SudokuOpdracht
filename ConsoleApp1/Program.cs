@@ -1,5 +1,4 @@
 using System;
-using System.Linq.Expressions;
 
 namespace ConsoleApp1
 {
@@ -19,7 +18,7 @@ namespace ConsoleApp1
             }
 
             // Get the value of the current cell
-            int iValueCurrentCell = sudoku.cells[iRow, iColumn].GetValue().Value;
+            int iValueCurrentCell = sudoku.cells[iRow, iColumn].value.Value;
 
             // Iterate over the 9 rows
             for (int row = 8; row >= 0; row--)
@@ -39,7 +38,7 @@ namespace ConsoleApp1
                     // Check which values comply with the constraint and leave those in our domain
                     for (int y = 9; y >= 1; y--)
                     {
-                        // Get bool value which represents whether the current value of (y + 1) is in the domain of the other cell                     
+                        // Get bool value which represents whether the current value of y is in the domain of the other cell                     
                         bool bInDomain = sudoku.cells[row, column].contains(y);
 
                         if(bInDomain)
@@ -75,15 +74,16 @@ namespace ConsoleApp1
         }
     }
 
-        public struct Cell
+    public struct Cell
     {
         // an array of 9 booleans that specify if the number is still possible
-        public bool[] possibleValues;
+        public bool[] domain;
+        public int? value;
 
         public override string ToString() {
             int? value = null;
             for (int i = 0; i < 9; i++) {
-                if (possibleValues[i]) {
+                if (domain[i]) {
                     if (value != null) {
                         return " ";
                     } else {
@@ -97,38 +97,21 @@ namespace ConsoleApp1
             return value.ToString();
         }
 
-        /**
-        * Returns a number if this cell has one possible state
-        * Otherwise returns null
-        */
-        public int? GetValue() {
-            int? value = null;
-            for (int i = 0; i < 9; i++) {
-                if (possibleValues[i]) {
-                    if (value != null) {
-                        return null;
-                    } else {
-                        value = i + 1;
-                    }
-                }
-            }
-            return value;
-        }
-
         public bool contains(int v) {
-            return possibleValues[v - 1];
+            return domain[v - 1];
         }
 
         public void reduce(int v) {
-            possibleValues[v - 1] = false;
+            domain[v - 1] = false;
         }
 
-        public void assign(int v)
+        public void SetValue(int v)
         {
             for (int i = 1; i <= 9; i++)
             {
-                if (i != v) possibleValues[i - 1] = false;
+                if (i != v) domain[i - 1] = false;
             }
+            this.value = v;
         }
 
     }
@@ -141,7 +124,7 @@ namespace ConsoleApp1
         {
             this.cells = cells;
         }
-        
+
         public Sudoku(string grid)
         {
             // create 2d cell array with x and y being columns and rows
@@ -154,15 +137,11 @@ namespace ConsoleApp1
                 int column = i % 9;
                 int row = i / 9;
 
-                cells[column, row].possibleValues = new bool[9];
-                if (numbers[i] == "0") {
-                    // if the number is zero, it could have any value
-                    for (int j = 0; j < 9; j++) {
-                        cells[column, row].possibleValues[j] = true;
-                    }
-                } else {
+                cells[column, row].domain = new bool[] {true, true, true, true, true, true, true, true, true};
+
+                if (numbers[i] != "0") {
                     // its possible value is only one
-                    cells[column, row].possibleValues[int.Parse(numbers[i]) - 1] = true;
+                    cells[column, row].SetValue(int.Parse(numbers[i]));
                 }
             }
 
@@ -209,7 +188,7 @@ namespace ConsoleApp1
                     for (int y = 0; y < 9; y++) {
                         if (x == x1 && y == y2) continue;
 
-                        int? value = cells[x, y].GetValue();
+                        int? value = cells[x, y].value;
                         if (value == null) continue;
 
                         // the cell is fixed, so let's check if our cell can have value `v1` if the iterated cell has `value`
@@ -261,7 +240,7 @@ namespace ConsoleApp1
             }
 
             //Go to the next cell if cell is already filled
-            if (this.cells[x, y].GetValue() != null) return this.CBT(x, y + 1); 
+            if (this.cells[x, y].value != null) return this.CBT(x, y + 1); 
 
             //Try filling in numbers in ascending order from 1 to 9.
             for (int i = 1; i <= 9; i++)
@@ -269,7 +248,7 @@ namespace ConsoleApp1
                 if (this.cells[x, y].contains(i)) //Check if i is in domain of the cell.
                 {
                     Sudoku newSudoku = this.Clone();
-                    newSudoku.cells[x, y].assign(i); //Assign value to the cell.
+                    newSudoku.cells[x, y].SetValue(i); //Assign value to the cell.
                     if (!ForwardChecker.Check(newSudoku, x, y)) continue; //ForwardChecking
                     Sudoku? solvedSudoku = newSudoku.CBT(x, y + 1); //CBT next cell. 
                     if (solvedSudoku != null) return solvedSudoku; //Return solved sudoku
@@ -306,7 +285,7 @@ namespace ConsoleApp1
             {
                 for (int y = 0; y < 9; y++)
                 {
-                    clonedCells[x, y].possibleValues = (bool[]) this.cells[x, y].possibleValues.Clone();
+                    clonedCells[x, y].domain = (bool[]) this.cells[x, y].domain.Clone();
                 }
             }
 
@@ -334,14 +313,11 @@ namespace ConsoleApp1
             Sudoku s1 = new Sudoku(toSolve);
             s1.Echo();
 
-            Console.WriteLine();
-            Console.WriteLine("MakeNodeConsistent");
             s1.MakeNodeConsistent();
-            s1.Echo();
-
+            Console.WriteLine();
             Sudoku? solved = s1.CBT(0, 0);
             if (solved != null) solved.Value.Echo();
-            else Console.WriteLine("failed");
+            else Console.WriteLine("This Sudoku has no solution");
         }
     }
 }
