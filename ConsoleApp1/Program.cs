@@ -126,6 +126,12 @@ namespace ConsoleApp1
     public struct Sudoku
     {
         public Cell[,] cells;
+
+        public Sudoku(Cell[,] cells)
+        {
+            this.cells = cells;
+        }
+        
         public Sudoku(string grid)
         {
             // create 2d cell array with x and y being columns and rows
@@ -249,6 +255,21 @@ namespace ConsoleApp1
             }
             Console.WriteLine();
         }
+
+        public Sudoku Clone()
+        {
+            Cell[,] clonedCells = new Cell[9, 9];
+
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    clonedCells[x, y].possibleValues = (bool[]) this.cells[x, y].possibleValues.Clone();
+                }
+            }
+
+            return new Sudoku(clonedCells);
+        }
     }
 
     class Program
@@ -285,6 +306,11 @@ namespace ConsoleApp1
             Console.WriteLine("ForwardCheck");
             new ForwardChecker().Check(s1, 0, 0);
             s1.Echo();
+
+            Console.WriteLine();
+            Console.WriteLine("Clone");
+            Sudoku s2 = s1.Clone();
+            s2.Echo();
         }
     }
 }
